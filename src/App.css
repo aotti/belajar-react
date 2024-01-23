@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css?family=Indie+Flower&v1');
+
+.handWritingFont {
+    font-family: 'Indie Flower', sans-serif;
+}
+
 .wavyHeader, .wavyFooter {
     position: relative;
     background: linear-gradient(90deg, #059669, #059669);

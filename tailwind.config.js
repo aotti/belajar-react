@@ -8,6 +8,9 @@ module.exports = {
   ],
   theme: {
     extend: {},
+    fontFamily: {
+      'handWriting': ['"Indie Flower"', 'sans-serif']
+    }
   },
   plugins: [],
 }

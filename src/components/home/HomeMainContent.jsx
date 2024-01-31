@@ -1,71 +1,95 @@
-import React, { useEffect, useState } from "react"
+import { useState } from "react"
 import { AddShoppingItem, SaveShoppingList } from "./HomeButtons"
+import { shoppingItemsArray } from "./helper/HomeShoppingItems"
 
-export default function HomeMainContent() {
-    // null items
-    const nullArray = [
-        { id: 1, amount: null, item: null },
-        { id: 2, amount: null, item: null },
-        { id: 3, amount: null, item: null },
-        { id: 4, amount: null, item: null }
-    ]
+export default function HomeMainContent({ getShoppingSave }) {
+    // get static data
+    const [nullArray, itemsArray, randomArray] = shoppingItemsArray()
+
+    // ~~~ useState var ~~~
+    // shopping null AND shopping items used for div elements 
     const [shoppingNull, setShoppingNull] = useState(nullArray)
-
-    // shopping items
-    const itemsArray = [
-        { id: 1, amount: 5, name: 'Ichi Ocha Greentea' },
-        { id: 2, amount: 2, name: 'Beng Beng' },
-        { id: 3, amount: 1, name: 'Minyak Goreng' },
-        { id: 4, amount: 2, name: 'Boncabe level 15' }
-    ]
     const [shoppingItems, setShoppingItems] = useState(itemsArray)
-    const [shoppingItemCounter, setShoppingItemCounter] = useState(0)
+    // counter used for item id
+    const [shoppingItemCounter, setShoppingItemCounter] = useState(itemsArray.length)
     // limit shopping items length to only 8
     shoppingItems.length = Math.min(shoppingItems.length, 8)
+    shoppingNull.length = Math.min(shoppingNull.length, 8)
+
+    // ~~~ FUNCTIONS ~~~
     // get shopping item that sent by child component
-    const getNewShoppingItem = (counter, item) => {
+    const getNewShoppingItem = (item) => {
+        setShoppingItemCounter(oldCounter => oldCounter + 1)
+        // push new item to current shopping items
         setShoppingItems(oldArray => [...oldArray, item])
-        setShoppingItemCounter(counter)
+        setShoppingNull(oldArray => oldArray.filter((item, i, arr) => { return item.id !== arr.length }))
     }
-    const shoppingItemProps = {
+    // get item id to delete the row
+    const getItemIdForRemove = (id, itemNull) => {
+        setShoppingNull(oldArray => [...oldArray, itemNull])
+        setShoppingItems(oldArray => oldArray.filter(item => { return item.id !== id }))
+    }
+    // generate random list
+    const getRandomShoppingItems = (shuffledArray) => {
+        // shuffled array = 8, shoppingItemCounter = 4  
+        const newCounter = shoppingItemCounter + shuffledArray.length
+        setShoppingItemCounter(newCounter)
+        setShoppingItems(shuffledArray)
+        setShoppingNull([])
+    }
+    // get shopping items to save
+    const getShoppingItemsForSave = (itemList) => {
+        return getShoppingSave(itemList)
+    }
+
+    // ~~~ PROPS ~~~
+    // props for onClick event when adding new item
+    const addShoppingItemProps = {
         counter: shoppingItemCounter,
-        length: shoppingItems.length,
-        getNewShoppingItem: getNewShoppingItem
+        newItemFunc: getNewShoppingItem
     }
-    // detect change on shoppingItems 
-    useEffect(() => {
-        if(shoppingItemCounter > 0) {
-            setShoppingNull(oldArray => oldArray.filter((item, i, arr) => { return item.id !== arr.length }))
-        }
-    }, [shoppingItems, shoppingItemCounter])
+    // props for onClick event when remove item
+    const removeShoppingItemProps = {
+        length: shoppingNull.length,
+        removeItemFunc: getItemIdForRemove
+    }
+    // props for onClick event when generate list
+    const generateShoppingItemsProps = {
+        array: randomArray,
+        generateRandomFunc: getRandomShoppingItems
+    }
+    // props for onClick event when save list
+    const saveShoppingItemsProps = {
+        array: shoppingItems,
+        saveListFunc: getShoppingItemsForSave
+    }
 
     return (
         <>
             {/* button to add new shopping item */}
-            <AddShoppingItem shoppingItemProps={ shoppingItemProps } />
+            <AddShoppingItem addShoppingItemProps={ addShoppingItemProps } />
             {
                 // display shopping items, when new item added, 1 row will be inserted 
-                shoppingItems.map((list, i) => {
+                shoppingItems.map((list) => {
                     const itemText = `${list.amount}x ${list.name}`
                     return (
                         // paper (row)
                         <div className="grid grid-cols-6 pl-2 py-2 bg-orange-300 border-b-2 border-gray-800" 
-                            key={list.id} data-item={itemText}
+                            key={list.id} data-item-id={list.id}
                         >
                             {/* paper hole */}
                             <div className="text-left">
                                 <div className="rounded-full bg-white w-8 h-8"></div>
                             </div>
                             { /* shopping items */ }
-                            <ShoppingItemList itemText={ itemText } />
+                            <ShoppingItemList itemId={ list.id } itemText={ itemText } removeShoppingItemProps={ removeShoppingItemProps } />
                         </div>
                     )
                 })
             }
-            
             {
                 // display empty row, when new item added, 1 row will be deleted 
-                shoppingNull.map((list, i) => {
+                shoppingNull.map((list) => {
                     return (
                         // paper (row)
                         <div className="grid grid-cols-6 pl-2 py-2 bg-orange-300 border-b-2 border-gray-800" 
@@ -82,20 +106,40 @@ export default function HomeMainContent() {
                 })
             }
             {/* button to generate random list / save list to database */}
-            <SaveShoppingList />
+            <SaveShoppingList generateShoppingItemsProps={ generateShoppingItemsProps } saveShoppingItemsProps={ saveShoppingItemsProps } />
         </>
     )
 }
 
-function ShoppingItemList({ itemText }) {
+function ShoppingItemList({ itemId, itemText, removeShoppingItemProps }) {
+    const { length, removeItemFunc } = removeShoppingItemProps
+    // function to delete a row
+    const handleDeleteRow = () => {
+        const [idForRemove, itemNull] = [
+            itemId,
+            // length is shoppingNull array length
+            { id: (length + 1), amount: null, item: null }
+        ]
+        return removeItemFunc(idForRemove, itemNull)
+    }
+    // function to change item status
+    const handleItemStatus = (ev) => {
+        let iconStatus = ev.target.innerText 
+        switch(iconStatus) {
+            case '✅': return ev.target.innerText = '❔' 
+            case '❔': return ev.target.innerText = '✅' 
+            default: return ev.target.innerText = 'null'
+        }
+    }
+
     return (
         <>
             {/* item */}
             <div className="handWritingFont col-span-4 text-3xl"> {itemText} </div>
             {/* options */}
             <div className="grid grid-cols-2">
-                <div className=""> ✅ ❔ </div>
-                <button id="removeItemButton" className="w-fit mx-auto"> 🚮 </button>
+                <button className="mx-auto px-4" onClick={(ev) => { handleItemStatus(ev) }}> ❔ </button>
+                <button className="mx-auto px-4" onClick={() => { handleDeleteRow() }}> 🚮 </button>
             </div>
         </>
     )

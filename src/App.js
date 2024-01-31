@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/home/Home';
-import About from './components/about/About';
+import SavedLists from './components/savedLists/SavedLists';
 import NotFound from './components/NotFound';
 import './App.css';
 
@@ -10,7 +10,7 @@ function App() {
       <Router>
         <Routes>
             <Route path='/'  element={<Home />} />
-            <Route path='/about'  element={<About />} />
+            <Route path='/savedlist'  element={<SavedLists />} />
             <Route path='*'  element={<NotFound />} />
         </Routes>
       </Router>
